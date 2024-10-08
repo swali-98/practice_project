@@ -2,6 +2,8 @@ package com.billing.project.controller;
 
 import com.billing.project.dto.PatientDto;
 import com.billing.project.service.BillingService;
+import com.billing.project.util.Convertor;
+import com.billing.project.util.DecryptUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.patient.system.dtos.Datadto;
@@ -28,27 +30,19 @@ public class BillingController {
 
 
     @PostMapping("/webhook")
-    public ResponseEntity<ResponseDto> entryPoint(@RequestBody Map<String,String> request){
+    public ResponseEntity<ResponseDto> entryPoint(@RequestBody Map<String,String> request) throws Exception {
 
-        ObjectMapper objectMapper=new ObjectMapper();
-        try {
-            String passPhrase="myPassPhrase";
-            String encryptedData=request.get("encryptData");
-            String salt=request.get("salt");
-            SecretKey secretKey= SecretKeyUtil.getKeyFromPassphrase(passPhrase,salt);
-            String decryptedData= EncryptionUtil.decrypt(encryptedData,secretKey);
-            Datadto datadto=objectMapper.readValue(decryptedData, Datadto.class);
+
+
+
+            Datadto datadto= Convertor.convert(request);
             if(datadto.getEvent().equals("create")){
                billingService.createNewBillingAccount(datadto);
             }
             else if(datadto.getEvent().equals("delete")){
               return new ResponseEntity<>(billingService.deleteBillingAccount(datadto), HttpStatus.OK);
             }
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+
 
         return new ResponseEntity<>(HttpStatus.OK);
     }
